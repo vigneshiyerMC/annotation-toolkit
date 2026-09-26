@@ -6,20 +6,22 @@
   "main": "./dist/annotation-toolkit.cjs.js",
   "module": "./dist/annotation-toolkit.es.js",
   "types": "./dist/index.d.ts",
-  "unpkg": "./dist/annotation-toolkit.js",
+  "unpkg": "./dist/annotation-toolkit.auto.js",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/annotation-toolkit.es.js",
       "require": "./dist/annotation-toolkit.cjs.js"
     },
+    "./auto": "./dist/annotation-toolkit.auto.js",
     "./dist/annotation-toolkit.js": "./dist/annotation-toolkit.js"
   },
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "rimraf dist && tsc -p tsconfig.build.json --emitDeclarationOnly && vite build && vite build --config vite.iife.config.ts",
+    "build": "rimraf dist && tsc -p tsconfig.build.json --emitDeclarationOnly && vite build && vite build --config vite.iife.config.ts && vite build --config vite.auto-es.config.ts",
+    "build:extension": "npm run build && cp dist/annotation-toolkit.js extension/content/annotation-toolkit.js",
     "dev": "vite build --watch",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -33,6 +35,15 @@
     "devtools"
   ],
   "license": "MIT",
+  "author": "Vignesh Iyer",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vigneshiyerMC/annotation-toolkit.git"
+  },
+  "homepage": "https://github.com/vigneshiyerMC/annotation-toolkit#readme",
+  "bugs": {
+    "url": "https://github.com/vigneshiyerMC/annotation-toolkit/issues"
+  },
   "dependencies": {
     "html2canvas": "^1.4.1"
   },
