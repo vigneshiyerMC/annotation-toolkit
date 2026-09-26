@@ -1,0 +1,46 @@
+{
+  "name": "annotation-toolkit",
+  "version": "0.1.0",
+  "description": "A standalone, framework-agnostic widget for visually annotating any web app's UI and exporting the annotations for handoff to a coding agent.",
+  "type": "module",
+  "main": "./dist/annotation-toolkit.cjs.js",
+  "module": "./dist/annotation-toolkit.es.js",
+  "types": "./dist/index.d.ts",
+  "unpkg": "./dist/annotation-toolkit.js",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/annotation-toolkit.es.js",
+      "require": "./dist/annotation-toolkit.cjs.js"
+    },
+    "./dist/annotation-toolkit.js": "./dist/annotation-toolkit.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "rimraf dist && tsc -p tsconfig.build.json --emitDeclarationOnly && vite build && vite build --config vite.iife.config.ts",
+    "dev": "vite build --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "annotation",
+    "ui",
+    "widget",
+    "ai-agent",
+    "devtools"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "html2canvas": "^1.4.1"
+  },
+  "devDependencies": {
+    "jsdom": "^25.0.1",
+    "rimraf": "^6.0.1",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.11",
+    "vitest": "^2.1.8"
+  }
+}
