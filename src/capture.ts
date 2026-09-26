@@ -37,17 +37,31 @@ function truncateOuterHtml(el: Element, maxLength: number): string {
  * that never enable screenshots don't pay for it.
  */
 export async function captureElementScreenshot(el: Element): Promise<string | undefined> {
+  const rect = el.getBoundingClientRect();
+  if (rect.width <= 0 || rect.height <= 0) {
+    // Nothing visible to capture (e.g. display:none or a zero-size node).
+    return undefined;
+  }
   try {
     const { default: html2canvas } = await import('html2canvas');
-    const rect = el.getBoundingClientRect();
+    // `el` itself is the render root, so html2canvas' internal coordinate
+    // space starts at (0, 0) for el's own top-left corner — NOT the page's
+    // scroll/viewport position. Passing page-absolute x/y here (a previous
+    // bug) cropped entirely outside the rendered content and produced a
+    // blank canvas. We only need width/height to bound the capture.
     const canvas = await html2canvas(el as HTMLElement, {
-      x: rect.left + window.scrollX,
-      y: rect.top + window.scrollY,
       width: rect.width,
       height: rect.height,
+      backgroundColor: null,
+      // Fixed at 1x regardless of devicePixelRatio: these images are
+      // embedded as base64 directly in the Markdown export for pasting
+      // into a chat-based coding agent, where payload size (and token
+      // cost) matters far more than pixel sharpness.
+      scale: 1,
       logging: false,
       useCORS: true,
     });
+    if (canvas.width === 0 || canvas.height === 0) return undefined;
     return canvas.toDataURL('image/png');
   } catch (err) {
     console.warn('[annotation-toolkit] Screenshot capture failed:', err);
