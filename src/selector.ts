@@ -17,28 +17,42 @@ function escapeAttrValue(value: string): string {
 }
 
 /** Returns a selector fragment that uniquely-ish identifies just this one element, if possible. */
-function directSelector(el: Element): string | null {
+function directSelectors(el: Element): string[] {
+  const selectors: string[] = [];
   const testId = el.getAttribute(STABLE_ATTR_TESTID);
   if (testId) {
-    return `[${STABLE_ATTR_TESTID}="${escapeAttrValue(testId)}"]`;
+    selectors.push(`[${STABLE_ATTR_TESTID}="${escapeAttrValue(testId)}"]`);
   }
 
   if (el.id) {
     // CSS.escape is unavailable in some minimal test environments; do a simple escape.
     const escapedId = /^[a-zA-Z][\w-]*$/.test(el.id) ? el.id : CSS.escape(el.id);
-    return `#${escapedId}`;
+    selectors.push(`#${escapedId}`);
   }
 
   const ariaLabel = el.getAttribute('aria-label');
   if (ariaLabel) {
-    return `[aria-label="${escapeAttrValue(ariaLabel)}"]`;
+    selectors.push(`[aria-label="${escapeAttrValue(ariaLabel)}"]`);
   }
 
   const role = el.getAttribute('role');
   if (role) {
-    return `${el.tagName.toLowerCase()}[role="${escapeAttrValue(role)}"]`;
+    selectors.push(`${el.tagName.toLowerCase()}[role="${escapeAttrValue(role)}"]`);
   }
 
+  return selectors;
+}
+
+function uniqueSelector(el: Element, selectors: string[]): string | null {
+  const doc = el.ownerDocument;
+  for (const selector of selectors) {
+    try {
+      const matches = doc.querySelectorAll(selector);
+      if (matches.length === 1 && matches[0] === el) return selector;
+    } catch {
+      // Ignore selectors that cannot be parsed by this document's CSS engine.
+    }
+  }
   return null;
 }
 
@@ -60,23 +74,34 @@ function nthChildFragment(el: Element): string {
  * case of a single-page document snapshot.
  */
 export function generateSelector(el: Element): string {
-  const direct = directSelector(el);
+  const direct = uniqueSelector(el, directSelectors(el));
   if (direct) return direct;
 
-  const path: string[] = [nthChildFragment(el)];
-  let current: Element | null = el.parentElement;
+  const path: string[] = [];
+  let current: Element | null = el;
 
   while (current && current.tagName.toLowerCase() !== 'body') {
-    const currentDirect = directSelector(current);
-    if (currentDirect) {
-      path.unshift(currentDirect);
-      return path.join(' > ');
-    }
     path.unshift(nthChildFragment(current));
+    const currentDirect = uniqueSelector(current, directSelectors(current));
+    if (currentDirect) {
+      const selector = [currentDirect, ...path.slice(1)].join(' > ');
+      try {
+        const matches = el.ownerDocument.querySelectorAll(selector);
+        if (matches.length === 1 && matches[0] === el) return selector;
+      } catch {
+        // Continue building a body-rooted path if the scoped path is invalid.
+      }
+    }
     current = current.parentElement;
   }
 
-  // Reached <body> (or ran out of ancestors) without finding a stable anchor.
-  path.unshift('body');
-  return path.join(' > ');
+  // Root the path at body and confirm it resolves uniquely in this document.
+  const bodyPath = ['body', ...path].join(' > ');
+  try {
+    const matches = el.ownerDocument.querySelectorAll(bodyPath);
+    if (matches.length === 1 && matches[0] === el) return bodyPath;
+  } catch {
+    // Detached elements may not have a queryable path; retain best-effort output.
+  }
+  return bodyPath;
 }
