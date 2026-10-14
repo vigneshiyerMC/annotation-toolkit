@@ -26,8 +26,9 @@ function directSelectors(el: Element): string[] {
 
   if (el.id) {
     // CSS.escape is unavailable in some minimal test environments; do a simple escape.
-    const escapedId = /^[a-zA-Z][\w-]*$/.test(el.id) ? el.id : CSS.escape(el.id);
-    selectors.push(`#${escapedId}`);
+    const escapedId = /^[a-zA-Z][\w-]*$/.test(el.id) ? el.id
+      : typeof CSS !== 'undefined' && typeof CSS.escape === 'function' ? CSS.escape(el.id) : null;
+    if (escapedId !== null) selectors.push(`#${escapedId}`);
   }
 
   const ariaLabel = el.getAttribute('aria-label');

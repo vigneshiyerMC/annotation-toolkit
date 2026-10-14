@@ -86,4 +86,18 @@ describe('generateSelector', () => {
     expect(document.querySelectorAll(selector)).toHaveLength(1);
     expect(document.querySelector(selector)).toBe(el);
   });
+
+  it('preserves a unique preferred attribute when an id needs unavailable CSS escaping', () => {
+    render('<button data-testid="save" id="123">Target</button>');
+    const el = document.querySelector('button')!;
+    expect(generateSelector(el)).toBe('[data-testid="save"]');
+  });
+
+  it('uses a unique fallback when duplicate attributes and ids need unavailable CSS escaping', () => {
+    render('<button data-testid="save" id="123">First</button><button data-testid="save" id="123">Target</button>');
+    const el = document.querySelectorAll('button')[1];
+    const selector = generateSelector(el);
+    expect(document.querySelectorAll(selector)).toHaveLength(1);
+    expect(document.querySelector(selector)).toBe(el);
+  });
 });
