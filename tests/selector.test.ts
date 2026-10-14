@@ -61,4 +61,43 @@ describe('generateSelector', () => {
     const el = document.querySelector('button')!;
     expect(generateSelector(el)).toBe('[aria-label="Say \\"hi\\""]');
   });
+
+  it('disambiguates repeated data-testid values and resolves the target', () => {
+    render(`
+      <main>
+        <section><button data-testid="save">First</button></section>
+        <section><button data-testid="save">Target</button></section>
+        <section><button data-testid="save">Third</button></section>
+      </main>
+    `);
+    const el = document.querySelectorAll('[data-testid="save"]')[1];
+    const selector = generateSelector(el);
+    expect(document.querySelectorAll(selector)).toHaveLength(1);
+    expect(document.querySelector(selector)).toBe(el);
+  });
+
+  it('disambiguates duplicate ids even when a duplicate preferred attribute is present', () => {
+    render(`
+      <div><button id="duplicate" aria-label="go">First</button></div>
+      <div><button id="duplicate" aria-label="go">Target</button></div>
+    `);
+    const el = document.querySelectorAll('#duplicate')[1];
+    const selector = generateSelector(el);
+    expect(document.querySelectorAll(selector)).toHaveLength(1);
+    expect(document.querySelector(selector)).toBe(el);
+  });
+
+  it('preserves a unique preferred attribute when an id needs unavailable CSS escaping', () => {
+    render('<button data-testid="save" id="123">Target</button>');
+    const el = document.querySelector('button')!;
+    expect(generateSelector(el)).toBe('[data-testid="save"]');
+  });
+
+  it('uses a unique fallback when duplicate attributes and ids need unavailable CSS escaping', () => {
+    render('<button data-testid="save" id="123">First</button><button data-testid="save" id="123">Target</button>');
+    const el = document.querySelectorAll('button')[1];
+    const selector = generateSelector(el);
+    expect(document.querySelectorAll(selector)).toHaveLength(1);
+    expect(document.querySelector(selector)).toBe(el);
+  });
 });
